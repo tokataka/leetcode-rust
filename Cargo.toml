@@ -5,14 +5,14 @@ authors = ["alei <rayingecho@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-reqwest = "0.9.8"
-serde = "1.0"
-serde_json = "1.0"
+reqwest = { version = "0.12.12", features = ["json", "blocking"] }
+serde = "1.0.217"
+serde_json = "1.0.135"
 serde_derive = "1.0"
-rand = "0.6.5"
-regex = "1.3.4"
-futures = { version = "0.3.3", features = ["thread-pool"] }
-surf = "1.0.3"
+rand = "0.8.5"
+regex = "1.11.1"
+futures = { version = "0.3.31", features = ["thread-pool"] }
+surf = "2.3.2"
 
 [lib]
 doctest = false
