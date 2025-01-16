@@ -1,0 +1,2 @@
+[alias]
+leetcode = "run --release -p leetcode --"
