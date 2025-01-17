@@ -104,7 +104,7 @@ fn archive_problem(problem_stat: &StatWithStatus) {
         .collect::<Vec<_>>();
 
     dest_mod_modified.push(format!("pub mod s{id_title};"));
-    dest_mod_modified.sort_by_key(|x| x[5..9].parse::<u32>().unwrap());
+    dest_mod_modified.sort_by_key(|x| x[9..13].parse::<u32>().unwrap());
 
     let _ = fs::write(dest_mod_path, dest_mod_modified.join("\n"));
 }
@@ -114,7 +114,7 @@ fn fetch_problem(problem: &Problem) {
 
     let examples_re =
         Regex::new(r"```\s*Input:(.+?)Output:(.+?)\s*(?:Explanation.+?)?```").unwrap();
-    let inputs_re = Regex::new(r"(\w+) = (?:(\[.+?\])|([^\[\]]+?))(?:,\s*|$)").unwrap();
+    // let inputs_re = Regex::new(r"\[(?:(?:[^\[\]]+)|(?R))*\]|(\w+) = (?:(\[(?:(?:[^\[\]]+)|(?R))*\])|([^\[\]]+?))(?:,\s*|$)").unwrap();
 
     let problem_content_joined = problem_content
         .split("\n")
@@ -126,15 +126,35 @@ fn fetch_problem(problem: &Problem) {
         .captures_iter(&problem_content_joined)
         .map(|x| {
             let extracted = x.extract::<2>().1;
-            let (inputs, expected) = (extracted[0], extracted[1]);
+            let (inputs_str, expected) = (extracted[0], extracted[1]);
 
-            let inputs = inputs_re
-                .captures_iter(inputs.trim())
-                .map(|x| {
-                    let extracted = x.extract::<2>().1;
-                    (extracted[0], extracted[1])
-                })
-                .collect::<Vec<_>>();
+            let inputs_str_len = inputs_str.chars().count();
+
+            let mut inputs = vec![];
+            let mut is_searching_equal = true;
+            let mut right = inputs_str_len;
+            let mut rvalue = "";
+
+            for (i, ch) in inputs_str.chars().rev().enumerate() {
+                let i = inputs_str_len - i - 1;
+
+                if is_searching_equal && ch == '=' {
+                    rvalue = inputs_str[(i + 1)..right].trim();
+                    right = i;
+
+                    is_searching_equal = !is_searching_equal;
+                } else if !is_searching_equal && ch == ',' {
+                    let lvalue = inputs_str[(i + 1)..right].trim();
+                    right = i;
+
+                    inputs.push((lvalue, rvalue));
+
+                    is_searching_equal = !is_searching_equal;
+                }
+            }
+
+            inputs.push((inputs_str[..right].trim(), rvalue));
+            inputs.reverse();
 
             (inputs, expected.trim())
         })
@@ -202,7 +222,7 @@ fn fetch_problem(problem: &Problem) {
         .collect::<Vec<_>>();
 
     mod_modified.push(format!("pub mod p{id_title};"));
-    mod_modified.sort_by_key(|x| x[5..9].parse::<u32>().unwrap());
+    mod_modified.sort_by_key(|x| x[9..13].parse::<u32>().unwrap());
 
     let _ = fs::write(mod_path, mod_modified.join("\n"));
 }
