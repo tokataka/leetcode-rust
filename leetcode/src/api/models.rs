@@ -14,6 +14,16 @@ query questionData($titleSlug: String!) {
 }"#;
 const QUESTION_QUERY_OPERATION: &str = "questionData";
 
+const DAILY_QUERY_STRING: &str = r#"
+query questionOfToday {
+    activeDailyCodingChallengeQuestion {
+        question {
+            frontendQuestionId: questionFrontendId
+        }
+    }
+}"#;
+const DAILY_QUERY_OPERATION: &str = "questionOfToday";
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Problem {
     pub title: String,
@@ -25,7 +35,7 @@ pub struct Problem {
     pub sample_test_case: String,
     pub difficulty: String,
     pub question_id: u32,
-    pub return_type: String,
+    pub meta_data: MetaData,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -34,6 +44,47 @@ pub struct CodeDefinition {
     pub text: String,
     #[serde(rename = "defaultCode")]
     pub default_code: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MetaData {
+    pub name: Option<String>,
+    pub params: Option<Vec<MetaDataParam>>,
+    #[serde(rename = "return")]
+    pub return_: Option<MetaDataReturn>,
+    // systemdesign only (class design)
+    pub systemdesign: Option<bool>,
+    pub classname: Option<String>,
+    pub constructor: Option<MetaDataConstructor>,
+    pub methods: Option<Vec<MetaDataMethod>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MetaDataParam {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub type_: String,
+    pub dealloc: Option<bool>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MetaDataReturn {
+    #[serde(rename = "type")]
+    pub type_: String,
+    pub dealloc: Option<bool>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MetaDataConstructor {
+    pub params: Vec<MetaDataParam>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MetaDataMethod {
+    pub name: String,
+    pub params: Vec<MetaDataParam>,
+    #[serde(rename = "return")]
+    pub return_: MetaDataReturn,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -113,6 +164,28 @@ pub struct Question {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct RawDaily {
+    pub data: DailyData,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DailyData {
+    #[serde(rename = "activeDailyCodingChallengeQuestion")]
+    pub active_daily_coding_challenge_question: ActiveDailyCodingChallengeQuestion,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ActiveDailyCodingChallengeQuestion {
+    pub question: DailyQuestion,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DailyQuestion {
+    #[serde(rename = "frontendQuestionId")]
+    pub frontend_question_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Query {
     #[serde(rename = "operationName")]
     operation_name: String,
@@ -126,6 +199,14 @@ impl Query {
             operation_name: QUESTION_QUERY_OPERATION.to_owned(),
             variables: json!({ "titleSlug": title_slug }),
             query: QUESTION_QUERY_STRING.to_owned(),
+        }
+    }
+
+    pub fn daily_query() -> Query {
+        Query {
+            operation_name: DAILY_QUERY_OPERATION.to_owned(),
+            variables: json!({}),
+            query: DAILY_QUERY_STRING.to_owned(),
         }
     }
 }

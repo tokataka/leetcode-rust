@@ -7,7 +7,7 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Cargo test",
+      "name": "Cargo debug test current problem",
       "cargo": {
         "args": ["test", "--no-run", "--lib", "-p", "solutions"]
       },
@@ -19,11 +19,28 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Cargo launch",
+      "name": "Cargo debug fetch",
       "cargo": {
         "args": ["build", "-p", "leetcode"]
       },
-      "args": ["fetch", "68"]
+      "args": ["fetch", "${input:leetcodeProblemId}"]
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Cargo debug daily",
+      "cargo": {
+        "args": ["build", "-p", "leetcode"]
+      },
+      "args": ["daily"]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "leetcodeProblemId",
+      "description": "Provide Problem ID",
+      "default": "1",
+      "type": "promptString"
     }
   ]
 }

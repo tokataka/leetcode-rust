@@ -3,7 +3,6 @@ mod models;
 pub use models::*;
 
 use reqwest::blocking as reqwest;
-use serde_json::Value;
 
 const PROBLEMS_URL: &str = "https://leetcode.com/api/problems/algorithms/";
 const GRAPHQL_URL: &str = "https://leetcode.com/graphql";
@@ -32,9 +31,24 @@ pub fn get_problem(problem_stat: &StatWithStatus) -> Option<Problem> {
         sample_test_case: res.data.question.sample_test_case,
         difficulty: problem_stat.difficulty.to_string(),
         question_id: problem_stat.stat.frontend_question_id,
-        return_type: {
-            let v: Value = serde_json::from_str(&res.data.question.meta_data).unwrap();
-            v["return"]["type"].to_string().replace("\"", "")
-        },
+        meta_data: serde_json::from_str(&res.data.question.meta_data).unwrap(),
     })
+}
+
+pub fn get_daily_problem_id() -> Option<u32> {
+    let client = reqwest::Client::new();
+    let res: RawDaily = client
+        .post(GRAPHQL_URL)
+        .json(&Query::daily_query())
+        .send()
+        .unwrap()
+        .json()
+        .ok()?;
+
+    res.data
+        .active_daily_coding_challenge_question
+        .question
+        .frontend_question_id
+        .parse()
+        .ok()
 }
