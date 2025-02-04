@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     fs,
     io::{self, BufRead, Write},
     path::Path,
@@ -9,9 +10,10 @@ use clap::{Parser, Subcommand};
 use leetcode::api::{self, MetaData, Problem, StatWithStatus};
 use rand::prelude::*;
 use regex::Regex;
+use scraper::{Html, Selector};
 
-const SOURCE_ROOT: &str = "./solutions/src/attempting";
-const DEST_ROOT: &str = "./solutions/src/solved";
+const ATTEMPTING_ROOT: &str = "./solutions/src/attempting";
+const ARCHIVED_ROOT: &str = "./solutions/src/archived";
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -21,10 +23,16 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum CliCommands {
-    /// Fetch problems via API (space-separated)
-    Fetch { problem_ids: Vec<u32> },
-    /// Archive solutions to solved (space-separated)
-    Archive { problem_ids: Vec<u32> },
+    /// Fetch problems
+    Fetch {
+        #[clap(required = true)]
+        problem_ids: Vec<u32>,
+    },
+    /// Archive solutions to archived
+    Archive {
+        #[clap(required = true)]
+        problem_ids: Vec<u32>,
+    },
     /// Fetch daily question
     Daily,
     /// Fetch a random problem via API
@@ -36,20 +44,34 @@ fn main() {
 
     let problems = api::list_problems().unwrap().stat_status_pairs;
 
+    let existing_attempting_problems =
+        io::BufReader::new(fs::File::open(format!("{ATTEMPTING_ROOT}/mod.rs")).unwrap())
+            .lines()
+            .filter_map(|x| x.unwrap()[9..13].parse::<u32>().ok())
+            .collect::<HashSet<_>>();
+
+    let existing_archived_problems =
+        io::BufReader::new(fs::File::open(format!("{ARCHIVED_ROOT}/mod.rs")).unwrap())
+            .lines()
+            .filter_map(|x| x.unwrap()[9..13].parse::<u32>().ok())
+            .collect::<HashSet<_>>();
+
     let problem_ids = match &cli.command {
         CliCommands::Fetch { problem_ids } | CliCommands::Archive { problem_ids } => {
             problem_ids.clone()
         }
         CliCommands::Random => {
-            let mut rng = rand::thread_rng();
-            vec![
-                problems
-                    .iter()
-                    .choose(&mut rng)
-                    .unwrap()
-                    .stat
-                    .frontend_question_id,
-            ]
+            let mut rng = rand::rng();
+
+            vec![problems
+                .iter()
+                .map(|problem| problem.stat.frontend_question_id)
+                .filter(|problem| {
+                    !existing_attempting_problems.contains(problem)
+                        && !existing_archived_problems.contains(problem)
+                })
+                .choose(&mut rng)
+                .unwrap()]
         }
         CliCommands::Daily => {
             let problem_id = api::get_daily_problem_id().expect("Daily question unavailable");
@@ -60,9 +82,41 @@ fn main() {
     problems
         .iter()
         .filter(|x| problem_ids.contains(&x.stat.frontend_question_id))
-        .for_each(|problem_stat| match cli.command {
-            CliCommands::Archive { problem_ids: _ } => archive_problem(problem_stat),
-            _ => fetch_problem(problem_stat),
+        .for_each(|problem_stat| {
+            let problem_id = problem_stat.stat.frontend_question_id;
+            let problem_title = problem_stat.stat.question_title.clone().unwrap();
+
+            let problem_string = format!("Problem #{}: {}", problem_id, &problem_title);
+
+            match &cli.command {
+                CliCommands::Archive { problem_ids: _ } => {
+                    if !existing_attempting_problems.contains(&problem_id) {
+                        println!("{} not found", &problem_string);
+                        return;
+                    }
+
+                    if existing_archived_problems.contains(&problem_id) {
+                        println!("Archived {} already exists", &problem_string);
+                        return;
+                    }
+
+                    archive_problem(problem_stat);
+
+                    println!("{} Archived", &problem_string);
+                }
+                _ => {
+                    if existing_attempting_problems.contains(&problem_id)
+                        || existing_archived_problems.contains(&problem_id)
+                    {
+                        println!("{} already exists", &problem_string);
+                        return;
+                    }
+
+                    fetch_problem(problem_stat);
+
+                    println!("{} Fetched", &problem_string,)
+                }
+            };
         });
 }
 
@@ -78,20 +132,12 @@ fn archive_problem(problem_stat: &StatWithStatus) {
             .replace("-", "_")
     );
 
-    let source_file = Path::new(SOURCE_ROOT).join(format!("p{id_title}.rs"));
-    let dest_file = Path::new(DEST_ROOT).join(format!("s{id_title}.rs"));
-
-    if !source_file.exists() {
-        panic!("Problem not found");
-    }
-
-    if dest_file.exists() {
-        panic!("Archived solution already exists");
-    }
+    let source_file = Path::new(ATTEMPTING_ROOT).join(format!("p{id_title}.rs"));
+    let dest_file = Path::new(ARCHIVED_ROOT).join(format!("p{id_title}.rs"));
 
     let _ = fs::rename(source_file, dest_file);
 
-    let source_mod_path = format!("{SOURCE_ROOT}/mod.rs");
+    let source_mod_path = format!("{ATTEMPTING_ROOT}/mod.rs");
     let source_mod_file = Path::new(&source_mod_path);
 
     let mut source_mod_modified = io::BufReader::new(fs::File::open(source_mod_file).unwrap())
@@ -105,7 +151,7 @@ fn archive_problem(problem_stat: &StatWithStatus) {
 
     let _ = fs::write(source_mod_path, source_mod_modified.join("\n"));
 
-    let dest_mod_path = format!("{DEST_ROOT}/mod.rs");
+    let dest_mod_path = format!("{ARCHIVED_ROOT}/mod.rs");
     let dest_mod_file = Path::new(&dest_mod_path);
 
     let mut dest_mod_modified = io::BufReader::new(fs::File::open(dest_mod_file).unwrap())
@@ -113,7 +159,7 @@ fn archive_problem(problem_stat: &StatWithStatus) {
         .map(|x| x.unwrap())
         .collect::<Vec<_>>();
 
-    dest_mod_modified.push(format!("pub mod s{id_title};"));
+    dest_mod_modified.push(format!("pub mod p{id_title};"));
     dest_mod_modified.sort_by_key(|x| x[9..13].parse::<u32>().unwrap());
     dest_mod_modified.dedup();
 
@@ -129,14 +175,11 @@ fn fetch_problem(problem_stat: &StatWithStatus) {
         problem.title_slug.replace("-", "_")
     );
 
-    let problem_path = format!("{SOURCE_ROOT}/p{id_title}.rs");
+    let problem_path = format!("{ATTEMPTING_ROOT}/p{id_title}.rs");
     let problem_file = Path::new(&problem_path);
 
-    if problem_file.exists() {
-        panic!("Problem \"{}\" already exists", problem.title);
-    }
-
-    let problem_content = html2md::parse_html(&problem.content).replace(" ", " ");
+    let problem_markdown = html2md::parse_html(&problem.content).replace(" ", " ");
+    let problem_dom = Html::parse_fragment(&problem.content);
 
     let code = problem
         .code_definition
@@ -157,7 +200,7 @@ fn fetch_problem(problem_stat: &StatWithStatus) {
         .replace("__PROBLEM_TITLE__", &problem.title)
         .replace(
             "__PROBLEM_DESC__",
-            &problem_content
+            &problem_markdown
                 .split("\n")
                 .map(|x| format!("/// {x}"))
                 .collect::<Vec<_>>()
@@ -176,7 +219,7 @@ fn fetch_problem(problem_stat: &StatWithStatus) {
             )
             .replace(
                 "__PROBLEM_TEST_CODE__",
-                &create_test_code_systemdesign(&problem_content, &problem.meta_data),
+                &create_test_code_systemdesign(&problem_markdown, &problem.meta_data),
             )
     } else {
         source
@@ -189,7 +232,7 @@ fn fetch_problem(problem_stat: &StatWithStatus) {
             )
             .replace(
                 "__PROBLEM_TEST_CODE__",
-                &create_test_code(&problem_content, &problem.meta_data),
+                &create_test_code(&problem_dom, &problem.meta_data),
             )
     };
 
@@ -203,7 +246,7 @@ fn fetch_problem(problem_stat: &StatWithStatus) {
     fp.write_all(source.as_bytes()).unwrap();
     drop(fp);
 
-    let mod_path = format!("{SOURCE_ROOT}/mod.rs");
+    let mod_path = format!("{ATTEMPTING_ROOT}/mod.rs");
     let mod_file = Path::new(&mod_path);
     let mut mod_modified = io::BufReader::new(fs::File::open(mod_file).unwrap())
         .lines()
@@ -300,53 +343,88 @@ fn to_snake_case(s: &str) -> String {
         .collect::<String>()
 }
 
-fn create_test_code(problem_content: &str, meta_data: &MetaData) -> String {
-    let problem_content = problem_content
-        .split("\n")
-        .map(|x| x.trim())
-        .collect::<Vec<_>>()
-        .join("");
+fn create_test_code(problem_dom: &Html, meta_data: &MetaData) -> String {
+    enum TextMode {
+        Input,
+        Expected,
+        Explanation,
+    }
 
-    let examples_re =
-        Regex::new(r"```\s*Input:(.+?)Output:(.+?)\s*(?:Explanation.+?)?```").unwrap();
+    let mut examples = vec![];
 
-    let examples = examples_re
-        .captures_iter(&problem_content)
-        .map(|x| {
-            let extracted = x.extract::<2>().1;
-            let (inputs_str, expected) = (extracted[0], extracted[1]);
+    let selector_pre = Selector::parse("pre").unwrap();
 
-            let inputs_str_len = inputs_str.chars().count();
+    for example in problem_dom.select(&selector_pre) {
+        let mut text_mode = TextMode::Input;
 
-            let mut inputs = vec![];
-            let mut is_searching_equal = true;
-            let mut right = inputs_str_len;
-            let mut rvalue = "";
+        let mut inputs_str = "";
+        let mut expected = "";
 
-            for (i, ch) in inputs_str.chars().rev().enumerate() {
-                let i = inputs_str_len - i - 1;
-
-                if is_searching_equal && ch == '=' {
-                    rvalue = inputs_str[(i + 1)..right].trim();
-                    right = i;
-
-                    is_searching_equal = !is_searching_equal;
-                } else if !is_searching_equal && ch == ',' {
-                    let lvalue = inputs_str[(i + 1)..right].trim();
-                    right = i;
-
-                    inputs.push((lvalue, rvalue));
-
-                    is_searching_equal = !is_searching_equal;
+        for text in example.text() {
+            if text.starts_with("Input:") {
+                text_mode = TextMode::Input;
+            } else if text.starts_with("Output:") {
+                text_mode = TextMode::Expected;
+            } else if text.starts_with("Explanation:") {
+                text_mode = TextMode::Explanation;
+            } else {
+                match text_mode {
+                    TextMode::Input => {
+                        inputs_str = text.trim();
+                    }
+                    TextMode::Expected => {
+                        expected = text.trim();
+                    }
+                    TextMode::Explanation => {}
                 }
             }
+        }
 
-            inputs.push((inputs_str[..right].trim(), rvalue));
-            inputs.reverse();
+        examples.push((inputs_str, expected));
+    }
 
-            (inputs, expected.trim())
-        })
-        .collect::<Vec<_>>();
+    let selector_example_block = Selector::parse("div.example-block").unwrap();
+    let selector_example_el = Selector::parse("span.example-io").unwrap();
+
+    for example in problem_dom.select(&selector_example_block) {
+        let mut example_iter = example.select(&selector_example_el);
+        let inputs_str = example_iter.next().unwrap().text().next().unwrap().trim();
+        let expected = example_iter.next().unwrap().text().next().unwrap().trim();
+
+        examples.push((inputs_str, expected));
+    }
+
+    let examples = examples.into_iter().map(|(inputs_str, expected)| {
+        let mut inputs = vec![];
+        let inputs_str_len = inputs_str.chars().count();
+        let mut is_searching_equal = true;
+        let mut right = inputs_str_len;
+        let mut rvalue = "";
+
+        for (i, ch) in inputs_str.chars().rev().enumerate() {
+            let i = inputs_str_len - i - 1;
+
+            if is_searching_equal && ch == '=' {
+                rvalue = inputs_str[(i + 1)..right].trim();
+                right = i;
+
+                is_searching_equal = !is_searching_equal;
+            } else if !is_searching_equal && ch == ',' {
+                let lvalue = inputs_str[(i + 1)..right].trim();
+                right = i;
+
+                inputs.push((lvalue, rvalue));
+
+                is_searching_equal = !is_searching_equal;
+            }
+        }
+
+        inputs.push((inputs_str[..right].trim(), rvalue));
+        inputs.reverse();
+
+        (inputs, expected)
+    });
+
     let mut test_code = vec![];
 
     for (inputs, expected) in examples {
@@ -416,7 +494,7 @@ fn create_test_code_systemdesign(problem_content: &str, meta_data: &MetaData) ->
 
                     if method_name == classname {
                         format!(
-                            "        let obj = {}::new({});",
+                            "        let mut obj = {}::new({});",
                             meta_data.classname.clone().unwrap(),
                             params
                                 .zip(constructor_param_types)

@@ -2,4 +2,4 @@
 pub mod util;
 
 pub mod attempting;
-pub mod solved;
+pub mod archived;
