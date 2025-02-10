@@ -96,13 +96,13 @@ fn main() {
                     }
 
                     if existing_archived_problems.contains(&problem_id) {
-                        println!("Archived {} already exists", &problem_string);
+                        println!("{} already archived", &problem_string);
                         return;
                     }
 
                     archive_problem(problem_stat);
 
-                    println!("{} Archived", &problem_string);
+                    println!("Archived {}", &problem_string);
                 }
                 _ => {
                     if existing_attempting_problems.contains(&problem_id)
@@ -114,7 +114,7 @@ fn main() {
 
                     fetch_problem(problem_stat);
 
-                    println!("{} Fetched", &problem_string,)
+                    println!("Fetched {}", &problem_string,)
                 }
             };
         });
@@ -310,7 +310,31 @@ fn insert_return_in_code(return_type: &str, code: &str) -> String {
 }
 
 fn insert_return_in_code_systemdesign(meta_data: &MetaData, code: &str) -> String {
-    let mut result = code.to_string();
+    let mut result = vec![];
+    let mut in_comment = false;
+
+    for line in code.split('\n') {
+        if line.trim().starts_with("//") {
+            continue;
+        }
+
+        if line.trim().starts_with("/**") {
+            in_comment = true;
+        }
+
+        if !in_comment {
+            if line.trim().starts_with("impl") {
+                result.push("#[allow(dead_code)]");
+            }
+            result.push(line);
+        }
+
+        if line.trim().ends_with("*/") {
+            in_comment = false;
+        }
+    }
+
+    let mut result = result.join("\n");
 
     let mut replacements = vec![("new".to_string(), "Self {}")];
     for method in meta_data.methods.as_ref().unwrap() {
@@ -353,45 +377,30 @@ fn create_test_code(problem_dom: &Html, meta_data: &MetaData) -> String {
     let mut examples = vec![];
 
     let selector_pre = Selector::parse("pre").unwrap();
+    let selector_example_block = Selector::parse("div.example-block").unwrap();
 
-    for example in problem_dom.select(&selector_pre) {
-        let mut text_mode = TextMode::Input;
+    for selector in [selector_pre, selector_example_block] {
+        for example in problem_dom.select(&selector) {
+            let mut text_mode = TextMode::Input;
+            let mut input_str = vec![];
+            let mut expected = vec![];
 
-        let mut inputs_str = "";
-        let mut expected = "";
-
-        for text in example.text() {
-            if text.starts_with("Input:") {
-                text_mode = TextMode::Input;
-            } else if text.starts_with("Output:") {
-                text_mode = TextMode::Expected;
-            } else if text.starts_with("Explanation:") {
-                text_mode = TextMode::Explanation;
-            } else {
-                match text_mode {
-                    TextMode::Input => {
-                        inputs_str = text.trim();
-                    }
-                    TextMode::Expected => {
-                        expected = text.trim();
-                    }
-                    TextMode::Explanation => {}
+            for text in example.text() {
+                match text.trim() {
+                    "" => (),
+                    "Input:" => text_mode = TextMode::Input,
+                    "Output:" => text_mode = TextMode::Expected,
+                    "Explanation:" => text_mode = TextMode::Explanation,
+                    x => match text_mode {
+                        TextMode::Input => input_str.push(x),
+                        TextMode::Expected => expected.push(x),
+                        TextMode::Explanation => break,
+                    },
                 }
             }
+
+            examples.push((input_str.join(" "), expected.join(" ")));
         }
-
-        examples.push((inputs_str, expected));
-    }
-
-    let selector_example_block = Selector::parse("div.example-block").unwrap();
-    let selector_example_el = Selector::parse("span.example-io").unwrap();
-
-    for example in problem_dom.select(&selector_example_block) {
-        let mut example_iter = example.select(&selector_example_el);
-        let inputs_str = example_iter.next().unwrap().text().next().unwrap().trim();
-        let expected = example_iter.next().unwrap().text().next().unwrap().trim();
-
-        examples.push((inputs_str, expected));
     }
 
     let examples = examples.into_iter().map(|(inputs_str, expected)| {
@@ -399,27 +408,28 @@ fn create_test_code(problem_dom: &Html, meta_data: &MetaData) -> String {
         let inputs_str_len = inputs_str.chars().count();
         let mut is_searching_equal = true;
         let mut right = inputs_str_len;
-        let mut rvalue = "";
+        let mut rvalue = "".to_owned();
 
         for (i, ch) in inputs_str.chars().rev().enumerate() {
             let i = inputs_str_len - i - 1;
 
             if is_searching_equal && ch == '=' {
-                rvalue = inputs_str[(i + 1)..right].trim();
+                rvalue = inputs_str[(i + 1)..right].trim().to_owned();
                 right = i;
 
                 is_searching_equal = !is_searching_equal;
             } else if !is_searching_equal && ch == ',' {
-                let lvalue = inputs_str[(i + 1)..right].trim();
+                let lvalue = inputs_str[(i + 1)..right].trim().to_owned();
                 right = i;
 
                 inputs.push((lvalue, rvalue));
+                rvalue = "".to_owned();
 
                 is_searching_equal = !is_searching_equal;
             }
         }
 
-        inputs.push((inputs_str[..right].trim(), rvalue));
+        inputs.push((inputs_str[..right].trim().to_owned(), rvalue));
         inputs.reverse();
 
         (inputs, expected)
@@ -432,12 +442,12 @@ fn create_test_code(problem_dom: &Html, meta_data: &MetaData) -> String {
 
         for (input, param) in inputs.iter().zip(meta_data.params.as_ref().unwrap()) {
             let lvalue = to_snake_case(&param.name);
-            let rvalue = format_value_type(input.1, &param.type_);
+            let rvalue = format_value_type(&input.1, &param.type_);
             test_code.push(format!("        let {lvalue} = {rvalue};"));
             function_inputs.push(lvalue);
         }
 
-        let rvalue = format_value_type(expected, &meta_data.return_.as_ref().unwrap().type_);
+        let rvalue = format_value_type(&expected, &meta_data.return_.as_ref().unwrap().type_);
         test_code.push(format!("        let expected = {rvalue};"));
 
         let function_name = to_snake_case(meta_data.name.as_ref().unwrap());
