@@ -22,3 +22,10 @@ This tool fetches Leetcode problems along with their provided test cases, allowi
 - Launch the **Cargo debug test current problem** configuration by pressing `F5` in VSCode.
 - This runs the following test command internally:
   `cargo test --lib -p solutions -- [attempting|archived]:{CURRENT_PROBLEM_FILE_NAME}`
+
+## Minimum Supported Rust Version (MSRV)
+
+This crate is guaranteed to compile on stable Rust 1.78.0 and up.
+However, `rust-toolchain.toml` overrides `toolchain.channel="1.79.0"` since Leetcode environment uses this specific version.[^1]
+
+[^1]: [[https://support.leetcode.com/hc/en-us/articles/360011833974-What-are-the-environments-for-the-programming-languages]]

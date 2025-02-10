@@ -129,7 +129,7 @@ fn archive_problem(problem_stat: &StatWithStatus) {
             .question_title_slug
             .as_ref()
             .unwrap()
-            .replace("-", "_")
+            .replace('-', "_")
     );
 
     let source_file = Path::new(ATTEMPTING_ROOT).join(format!("p{id_title}.rs"));
@@ -172,13 +172,13 @@ fn fetch_problem(problem_stat: &StatWithStatus) {
     let id_title = format!(
         "{:04}_{}",
         problem.question_id,
-        problem.title_slug.replace("-", "_")
+        problem.title_slug.replace('-', "_")
     );
 
     let problem_path = format!("{ATTEMPTING_ROOT}/p{id_title}.rs");
     let problem_file = Path::new(&problem_path);
 
-    let problem_markdown = html2md::parse_html(&problem.content).replace(" ", " ");
+    let problem_markdown = html2md::parse_html(&problem.content).replace(' ', " ");
     let problem_dom = Html::parse_fragment(&problem.content);
 
     let code = problem
@@ -189,7 +189,7 @@ fn fetch_problem(problem_stat: &StatWithStatus) {
 
     let default_code = code
         .default_code
-        .split("\n")
+        .split('\n')
         .filter(|x| !x.starts_with("//"))
         .collect::<Vec<_>>()
         .join("\n");
@@ -201,7 +201,7 @@ fn fetch_problem(problem_stat: &StatWithStatus) {
         .replace(
             "__PROBLEM_DESC__",
             &problem_markdown
-                .split("\n")
+                .split('\n')
                 .map(|x| format!("/// {x}"))
                 .collect::<Vec<_>>()
                 .join("\n"),
@@ -414,7 +414,7 @@ fn create_test_code(problem_dom: &Html, meta_data: &MetaData) -> String {
             let i = inputs_str_len - i - 1;
 
             if is_searching_equal && ch == '=' {
-                rvalue = inputs_str[(i + 1)..right].trim().to_owned();
+                inputs_str[(i + 1)..right].trim().clone_into(&mut rvalue);
                 right = i;
 
                 is_searching_equal = !is_searching_equal;
@@ -422,8 +422,8 @@ fn create_test_code(problem_dom: &Html, meta_data: &MetaData) -> String {
                 let lvalue = inputs_str[(i + 1)..right].trim().to_owned();
                 right = i;
 
-                inputs.push((lvalue, rvalue));
-                rvalue = "".to_owned();
+                inputs.push((lvalue, rvalue.clone()));
+                rvalue.clear();
 
                 is_searching_equal = !is_searching_equal;
             }
@@ -462,7 +462,7 @@ fn create_test_code(problem_dom: &Html, meta_data: &MetaData) -> String {
 
 fn create_test_code_systemdesign(problem_content: &str, meta_data: &MetaData) -> String {
     let problem_content = problem_content
-        .split("\n")
+        .split('\n')
         .map(|x| x.trim())
         .collect::<Vec<_>>()
         .join("");
@@ -483,7 +483,7 @@ fn create_test_code_systemdesign(problem_content: &str, meta_data: &MetaData) ->
                 (extracted[0], extracted[1], extracted[2]);
 
             let method_names = method_names[1..method_names.len() - 1]
-                .split(",")
+                .split(',')
                 .map(|x| x.trim().trim_matches('"'));
 
             let method_params_re = Regex::new(r"\[([^\[\]]*)\]").unwrap();
@@ -493,14 +493,14 @@ fn create_test_code_systemdesign(problem_content: &str, meta_data: &MetaData) ->
                 .map(|x| x.extract::<1>().1[0]);
 
             let expecteds = expecteds[1..expecteds.len() - 1]
-                .split(",")
+                .split(',')
                 .map(|x| x.trim());
 
             method_names
                 .zip(method_params)
                 .zip(expecteds)
                 .map(|((method_name, method_param), expected)| {
-                    let params = method_param.split(",").map(|x| x.trim());
+                    let params = method_param.split(',').map(|x| x.trim());
 
                     if method_name == classname {
                         format!(
