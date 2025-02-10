@@ -81,12 +81,12 @@ mod tests {
 
     #[test]
     fn test_2661() {
-        let arr = vec![1,3,4,2];
-        let mat = nd_vec![[1,4],[2,3]];
+        let arr = vec![1, 3, 4, 2];
+        let mat = nd_vec![[1, 4], [2, 3]];
         let expected = 2;
         assert_eq!(Solution::first_complete_index(arr, mat), expected);
-        let arr = vec![2,8,7,4,1,3,5,6,9];
-        let mat = nd_vec![[3,2,5],[1,4,6],[8,7,9]];
+        let arr = vec![2, 8, 7, 4, 1, 3, 5, 6, 9];
+        let mat = nd_vec![[3, 2, 5], [1, 4, 6], [8, 7, 9]];
         let expected = 3;
         assert_eq!(Solution::first_complete_index(arr, mat), expected);
     }

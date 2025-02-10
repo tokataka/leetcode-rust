@@ -64,10 +64,10 @@ mod tests {
         let nums = vec![1];
         let expected = true;
         assert_eq!(Solution::is_array_special(nums), expected);
-        let nums = vec![2,1,4];
+        let nums = vec![2, 1, 4];
         let expected = true;
         assert_eq!(Solution::is_array_special(nums), expected);
-        let nums = vec![4,3,1,6];
+        let nums = vec![4, 3, 1, 6];
         let expected = false;
         assert_eq!(Solution::is_array_special(nums), expected);
     }

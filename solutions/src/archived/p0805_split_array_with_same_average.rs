@@ -37,63 +37,30 @@ pub struct Solution {}
 // discuss: https://leetcode.com/problems/split-array-with-same-average/discuss/?currentPage=1&orderBy=most_votes&query=
 
 // submission codes start here
-use std::collections::HashSet;
 
 impl Solution {
     pub fn split_array_same_average(nums: Vec<i32>) -> bool {
-        let total_sum: i32 = nums.iter().cloned().sum();
-        let total_count = nums.len() as i32;
+        let nums = nums.into_iter().map(|x| x as usize).collect::<Vec<_>>();
+        let sum = nums.iter().sum::<usize>();
+        let n = nums.len();
 
-        fn _gcd(a: i32, b: i32) -> i32 {
-            if b == 0 {
-                return a;
-            }
+        let mut dp = vec![0; sum + 1];
+        dp[nums[0]] = 0b10;
 
-            _gcd(b, a % b)
-        }
-
-        let gcd = _gcd(total_sum, total_count);
-
-        if gcd == 1 {
-            return false;
-        }
-
-        let targets = (1..=(gcd / 2))
-            .map(|x| (total_sum * x / gcd, total_count * x / gcd))
-            .fold(vec![None; 31], |mut acc, x| {
-                acc[x.1 as usize] = Some(x.0);
-                acc
-            });
-
-        let mut st = vec![(0, 0)];
-        let mut visited = HashSet::new();
-
-        for len in 1..=(nums.len() / 2) {
-            let mut next = vec![];
-
-            for (sum, bitmask) in st {
-                for idx in 0..nums.len() {
-                    if bitmask & (1 << idx) == 0 {
-                        let next_sum = sum + nums[idx];
-                        let next_bitmask = bitmask | (1 << idx);
-
-                        if visited.contains(&(next_sum, len)) {
-                            continue;
-                        }
-
-                        visited.insert((next_sum, len));
-
-                        if let Some(x) = targets[len] {
-                            if x == next_sum {
-                                return true;
-                            }
-                        }
-                        next.push((next_sum, next_bitmask));
-                    }
+        for i in 1..n {
+            for s in (0..sum - nums[i]).rev() {
+                if dp[s] > 0 {
+                    dp[s + nums[i]] |= dp[s] << 1;
                 }
             }
 
-            st = next;
+            dp[nums[i]] |= 0b10;
+        }
+
+        for i in 1..n {
+            if sum * i % n == 0 && ((1 << i) & dp[sum * i / n]) > 0 {
+                return true;
+            }
         }
 
         false
@@ -114,7 +81,7 @@ mod tests {
         // let nums = vec![3, 1];
         // let expected = false;
         // assert_eq!(Solution::split_array_same_average(nums), expected);
-        let nums = vec![5,3,11,19,2];
+        let nums = vec![5, 3, 11, 19, 2];
         let expected = true;
         assert_eq!(Solution::split_array_same_average(nums), expected);
     }

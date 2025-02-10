@@ -126,17 +126,51 @@ mod tests {
 
     #[test]
     fn test_68() {
-        let words = vec_string!["This", "is", "an", "example", "of", "text", "justification."];
+        let words = vec_string![
+            "This",
+            "is",
+            "an",
+            "example",
+            "of",
+            "text",
+            "justification."
+        ];
         let max_width = 16;
-        let expected = vec_string!["This    is    an","example  of text","justification.  "];
+        let expected = vec_string!["This    is    an", "example  of text", "justification.  "];
         assert_eq!(Solution::full_justify(words, max_width), expected);
-        let words = vec_string!["What","must","be","acknowledgment","shall","be"];
+        let words = vec_string!["What", "must", "be", "acknowledgment", "shall", "be"];
         let max_width = 16;
-        let expected = vec_string!["What   must   be","acknowledgment  ","shall be        "];
+        let expected = vec_string!["What   must   be", "acknowledgment  ", "shall be        "];
         assert_eq!(Solution::full_justify(words, max_width), expected);
-        let words = vec_string!["Science","is","what","we","understand","well","enough","to","explain","to","a","computer.","Art","is","everything","else","we","do"];
+        let words = vec_string![
+            "Science",
+            "is",
+            "what",
+            "we",
+            "understand",
+            "well",
+            "enough",
+            "to",
+            "explain",
+            "to",
+            "a",
+            "computer.",
+            "Art",
+            "is",
+            "everything",
+            "else",
+            "we",
+            "do"
+        ];
         let max_width = 20;
-        let expected = vec_string!["Science  is  what we","understand      well","enough to explain to","a  computer.  Art is","everything  else  we","do                  "];
+        let expected = vec_string![
+            "Science  is  what we",
+            "understand      well",
+            "enough to explain to",
+            "a  computer.  Art is",
+            "everything  else  we",
+            "do                  "
+        ];
         assert_eq!(Solution::full_justify(words, max_width), expected);
     }
 }

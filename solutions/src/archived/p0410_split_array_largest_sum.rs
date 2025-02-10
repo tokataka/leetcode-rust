@@ -68,7 +68,8 @@ impl Solution {
             let prev_sum = prefix_sum[cur];
             let sum_div = (prefix_sum.last().unwrap() - prev_sum) / (split_remain + 1);
 
-            let start_idx = (cur + 1).max(prefix_sum.partition_point(|&x| x < prev_sum + sum_div) - 1);
+            let start_idx =
+                (cur + 1).max(prefix_sum.partition_point(|&x| x < prev_sum + sum_div) - 1);
 
             let mut result = i32::MAX;
 

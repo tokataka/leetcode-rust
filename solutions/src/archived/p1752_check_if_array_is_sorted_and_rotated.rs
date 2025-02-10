@@ -65,13 +65,13 @@ mod tests {
 
     #[test]
     fn test_1752() {
-        let nums = vec![3,4,5,1,2];
+        let nums = vec![3, 4, 5, 1, 2];
         let expected = true;
         assert_eq!(Solution::check(nums), expected);
-        let nums = vec![2,1,3,4];
+        let nums = vec![2, 1, 3, 4];
         let expected = false;
         assert_eq!(Solution::check(nums), expected);
-        let nums = vec![1,2,3];
+        let nums = vec![1, 2, 3];
         let expected = true;
         assert_eq!(Solution::check(nums), expected);
     }
