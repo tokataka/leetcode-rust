@@ -219,7 +219,7 @@ fn fetch_problem(problem_stat: &StatWithStatus) {
             )
             .replace(
                 "__PROBLEM_TEST_CODE__",
-                &create_test_code_systemdesign(&problem_markdown, &problem.meta_data),
+                &create_test_code_systemdesign(&problem_dom, &problem.meta_data),
             )
     } else {
         source
@@ -267,7 +267,8 @@ fn parse_extra_use(code: &str) -> String {
         extra_use_line.push_str("\nuse crate::util::linked_list::ListNode;")
     }
     if code.contains("pub struct TreeNode") {
-        extra_use_line.push_str("\nuse crate::util::tree::TreeNode;")
+        extra_use_line
+            .push_str("\nuse crate::util::tree::TreeNode;")
     }
     if code.contains("pub struct Point") {
         extra_use_line.push_str("\nuse crate::util::point::Point;")
@@ -290,7 +291,7 @@ fn default_return_value(return_type: &str) -> &str {
     match return_type {
         x if x.ends_with("[]") || x.starts_with("list<") => "vec![]",
         "ListNode" => "Some(Box::new(ListNode::new(0)))",
-        "TreeNode" => "Some(Rc::new(RefCell::new(TreeNode::new(0)))",
+        "TreeNode" => "Some(Rc::new(RefCell::new(TreeNode::new(0))))",
         "boolean" => "false",
         "character" => "'0'",
         "double" => "0.",
@@ -388,9 +389,9 @@ fn create_test_code(problem_dom: &Html, meta_data: &MetaData) -> String {
             for text in example.text() {
                 match text.trim() {
                     "" => (),
-                    "Input:" => text_mode = TextMode::Input,
-                    "Output:" => text_mode = TextMode::Expected,
-                    "Explanation:" => text_mode = TextMode::Explanation,
+                    _x if _x.starts_with("Input") => text_mode = TextMode::Input,
+                    _x if _x.starts_with("Output") => text_mode = TextMode::Expected,
+                    _x if _x.starts_with("Explanation") => text_mode = TextMode::Explanation,
                     x => match text_mode {
                         TextMode::Input => input_str.push(x),
                         TextMode::Expected => expected.push(x),
@@ -460,53 +461,80 @@ fn create_test_code(problem_dom: &Html, meta_data: &MetaData) -> String {
     test_code.join("\n")
 }
 
-fn create_test_code_systemdesign(problem_content: &str, meta_data: &MetaData) -> String {
-    let problem_content = problem_content
-        .split('\n')
-        .map(|x| x.trim())
-        .collect::<Vec<_>>()
-        .join("");
+fn create_test_code_systemdesign(problem_dom: &Html, meta_data: &MetaData) -> String {
+    // let problem_content = problem_content
+    //     .split('\n')
+    //     .map(|x| x.trim())
+    //     .collect::<Vec<_>>()
+    //     .join("");
 
-    let examples_re = Regex::new(
-        r"```\s*Input(\[[^\n]+\])\s*(\[[^\n]+\])\s*Output\s*(\[[^\n]+\])\s*(?:Explanation.+?)?```",
-    )
-    .unwrap();
+    // let examples_re = Regex::new(
+    //     r"```\s*Input(\[[^\n]+\])\s*(\[[^\n]+\])\s*Output\s*(\[[^\n]+\])\s*(?:Explanation.+?)?```",
+    // )
+    // .unwrap();
 
     let classname = meta_data.classname.clone().unwrap();
     let constructor_param_types = &meta_data.constructor.as_ref().unwrap().params;
 
-    examples_re
-        .captures_iter(&problem_content)
-        .flat_map(|x| {
-            let extracted = x.extract::<3>().1;
-            let (method_names, method_params, expecteds) =
-                (extracted[0], extracted[1], extracted[2]);
+    enum TextMode {
+        Input,
+        Expected,
+        Explanation,
+    }
 
-            let method_names = method_names[1..method_names.len() - 1]
-                .split(',')
-                .map(|x| x.trim().trim_matches('"'));
+    let mut examples = vec![];
 
-            let method_params_re = Regex::new(r"\[([^\[\]]*)\]").unwrap();
+    let selector_pre = Selector::parse("pre").unwrap();
+    let selector_example_block = Selector::parse("div.example-block").unwrap();
 
-            let method_params = method_params_re
-                .captures_iter(method_params)
-                .map(|x| x.extract::<1>().1[0]);
+    for selector in [selector_pre, selector_example_block] {
+        for example in problem_dom.select(&selector) {
+            let mut text_mode = TextMode::Input;
+            let mut input_str = vec![];
+            let mut expected = vec![];
 
-            let expecteds = expecteds[1..expecteds.len() - 1]
-                .split(',')
-                .map(|x| x.trim());
+            for text in example.text() {
+                match text.trim() {
+                    "" => (),
+                    _x if _x.starts_with("Input") => text_mode = TextMode::Input,
+                    _x if _x.starts_with("Output") => text_mode = TextMode::Expected,
+                    _x if _x.starts_with("Explanation") => text_mode = TextMode::Explanation,
+                    x => match text_mode {
+                        TextMode::Input => input_str.push(x),
+                        TextMode::Expected => expected.push(x),
+                        TextMode::Explanation => break,
+                    },
+                }
+            }
+
+            examples.push((input_str.join(" "), expected.join(" ")));
+        }
+    }
+
+    examples
+        .into_iter()
+        .flat_map(|(input_str, expecteds)| {
+            let (method_names, method_params) = input_str.split_once('\n').unwrap();
+
+            let method_names = split_list_str(method_names);
+            let method_names = method_names.iter().map(|x| x.trim_matches('"'));
+
+            let method_params = split_list_str(method_params);
+
+            let expecteds = split_list_str(&expecteds);
 
             method_names
                 .zip(method_params)
                 .zip(expecteds)
                 .map(|((method_name, method_param), expected)| {
-                    let params = method_param.split(',').map(|x| x.trim());
+                    let params = split_list_str(method_param);
 
                     if method_name == classname {
                         format!(
                             "        let mut obj = {}::new({});",
                             meta_data.classname.clone().unwrap(),
                             params
+                                .into_iter()
                                 .zip(constructor_param_types)
                                 .map(|(param, param_def)| {
                                     format_value_type(param, &param_def.type_)
@@ -528,6 +556,7 @@ fn create_test_code_systemdesign(problem_content: &str, meta_data: &MetaData) ->
                                 "        obj.{}({});",
                                 to_snake_case(method_name),
                                 params
+                                    .into_iter()
                                     .zip(&method.params)
                                     .map(|(param, param_def)| {
                                         format_value_type(param, &param_def.type_)
@@ -541,6 +570,7 @@ fn create_test_code_systemdesign(problem_content: &str, meta_data: &MetaData) ->
                                 if expected == "false" { "!" } else { "" },
                                 to_snake_case(method_name),
                                 params
+                                    .into_iter()
                                     .zip(&method.params)
                                     .map(|(param, param_def)| {
                                         format_value_type(param, &param_def.type_)
@@ -553,6 +583,7 @@ fn create_test_code_systemdesign(problem_content: &str, meta_data: &MetaData) ->
                                 "        assert_eq!(obj.{}({}), {});",
                                 to_snake_case(method_name),
                                 params
+                                    .into_iter()
                                     .zip(&method.params)
                                     .map(|(param, param_def)| {
                                         format_value_type(param, &param_def.type_)
@@ -568,6 +599,33 @@ fn create_test_code_systemdesign(problem_content: &str, meta_data: &MetaData) ->
         })
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+fn split_list_str(s: &str) -> Vec<&str> {
+    let s = &s[1..s.len() - 1];
+
+    let mut start_idx = 0;
+    let mut brace_count = 0;
+
+    let mut result = vec![];
+
+    for cur_idx in 0..s.len() {
+        match &s[cur_idx..cur_idx + 1] {
+            "[" => brace_count += 1,
+            "]" => brace_count -= 1,
+            "," => {
+                if brace_count == 0 {
+                    result.push(s[start_idx..cur_idx].trim());
+                    start_idx = cur_idx + 1;
+                }
+            }
+            _ => (),
+        }
+    }
+
+    result.push(s[start_idx..].trim());
+
+    result
 }
 
 fn format_value_type(value: &str, value_type: &str) -> String {
