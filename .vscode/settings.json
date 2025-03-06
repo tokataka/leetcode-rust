@@ -1,0 +1,3 @@
+{
+  "rust-analyzer.server.path": "${userHome}/.cargo/bin/rust-analyzer"
+}
