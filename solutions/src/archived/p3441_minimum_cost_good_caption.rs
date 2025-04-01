@@ -120,30 +120,34 @@ impl Solution {
         let mut cur_len = 3;
         let mut cur_ch = 0;
 
-        dp.iter().enumerate().take(caption.len()).for_each(|(i, dp_cur)| {
-            if cur_len == 3 && i < caption.len() - 2 {
-                let (changed_cost, changed_ch) = (0..26).map(|ch| (dp_cur[ch][3], ch)).min().unwrap();
+        dp.iter()
+            .enumerate()
+            .take(caption.len())
+            .for_each(|(i, dp_cur)| {
+                if cur_len == 3 && i < caption.len() - 2 {
+                    let (changed_cost, changed_ch) =
+                        (0..26).map(|ch| (dp_cur[ch][3], ch)).min().unwrap();
 
-                let unchanged_cost = dp_cur[cur_ch][2].min(dp_cur[cur_ch][1]);
+                    let unchanged_cost = dp_cur[cur_ch][2].min(dp_cur[cur_ch][1]);
 
-                if i > 0
-                    && (changed_cost > unchanged_cost
-                        || changed_cost == unchanged_cost && changed_ch > cur_ch)
-                {
-                    cur_len = 1;
-                } else {
-                    cur_ch = changed_ch;
+                    if i > 0
+                        && (changed_cost > unchanged_cost
+                            || changed_cost == unchanged_cost && changed_ch > cur_ch)
+                    {
+                        cur_len = 1;
+                    } else {
+                        cur_ch = changed_ch;
+                    }
                 }
-            }
 
-            result.push((cur_ch as u8 + b'a') as char);
+                result.push((cur_ch as u8 + b'a') as char);
 
-            if cur_len == 1 {
-                cur_len = 3;
-            } else {
-                cur_len -= 1;
-            }
-        });
+                if cur_len == 1 {
+                    cur_len = 3;
+                } else {
+                    cur_len -= 1;
+                }
+            });
 
         result
     }

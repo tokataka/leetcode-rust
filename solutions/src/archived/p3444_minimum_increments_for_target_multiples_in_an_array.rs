@@ -75,7 +75,7 @@ impl Solution {
             let mut lcm = 1;
 
             for (i, &t) in target.iter().enumerate() {
-                if x & 1 << i > 0 {
+                if x & (1 << i) > 0 {
                     let gcd = gcd(lcm, t);
                     lcm = lcm * t / gcd;
 

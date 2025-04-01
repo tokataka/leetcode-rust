@@ -101,7 +101,6 @@ impl SegmentTree {
                 self.data[node] = (0, 0);
             }
             return;
-
         }
 
         self.update(node * 2, start, (start + end) / 2, left, right, diff);
@@ -190,7 +189,18 @@ mod tests {
         // let squares = nd_vec![[0, 0, 2], [1, 1, 1]];
         // let expected = 1.00000;
         // assert_eq!(Solution::separate_squares(squares), expected);
-        let squares = nd_vec![[1,1,50000],[2,1,50000],[3,1,50000],[4,1,50000],[5,1,50000],[6,1,50000],[7,1,50000],[8,1,50000],[9,1,50000],[10,1,50000]];
+        let squares = nd_vec![
+            [1, 1, 50000],
+            [2, 1, 50000],
+            [3, 1, 50000],
+            [4, 1, 50000],
+            [5, 1, 50000],
+            [6, 1, 50000],
+            [7, 1, 50000],
+            [8, 1, 50000],
+            [9, 1, 50000],
+            [10, 1, 50000]
+        ];
         let expected = 25001.;
         assert_eq!(Solution::separate_squares(squares), expected);
     }

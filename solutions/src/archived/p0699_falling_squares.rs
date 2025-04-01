@@ -112,7 +112,6 @@ impl SegmentTree {
     }
 }
 
-
 impl Solution {
     pub fn falling_squares(positions: Vec<Vec<i32>>) -> Vec<i32> {
         let mut idx_to_x = positions

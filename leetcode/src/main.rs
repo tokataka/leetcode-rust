@@ -267,8 +267,7 @@ fn parse_extra_use(code: &str) -> String {
         extra_use_line.push_str("\nuse crate::util::linked_list::ListNode;")
     }
     if code.contains("pub struct TreeNode") {
-        extra_use_line
-            .push_str("\nuse crate::util::tree::TreeNode;")
+        extra_use_line.push_str("\nuse crate::util::tree::TreeNode;")
     }
     if code.contains("pub struct Point") {
         extra_use_line.push_str("\nuse crate::util::point::Point;")

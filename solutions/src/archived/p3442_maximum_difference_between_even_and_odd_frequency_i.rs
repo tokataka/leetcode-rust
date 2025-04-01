@@ -52,7 +52,11 @@ impl Solution {
         }
 
         let odd = freq.iter().filter(|&&x| x & 1 == 1).max().unwrap();
-        let even = freq.iter().filter(|&&x| x != 0 && x & 1 == 0).min().unwrap();
+        let even = freq
+            .iter()
+            .filter(|&&x| x != 0 && x & 1 == 0)
+            .min()
+            .unwrap();
 
         odd - even
     }
