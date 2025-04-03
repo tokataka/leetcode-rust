@@ -21,7 +21,7 @@
   // "forwardPorts": [],
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "cargo build",
+  "postCreateCommand": "cargo fetch",
 
   // Configure tool-specific properties.
   "customizations": {
