@@ -82,6 +82,7 @@ pub mod p2698_find_the_punishment_number_of_an_integer;
 pub mod p2780_minimum_index_of_a_valid_split;
 pub mod p2818_apply_operations_to_maximize_score;
 pub mod p2873_maximum_value_of_an_ordered_triplet_i;
+pub mod p2874_maximum_value_of_an_ordered_triplet_ii;
 pub mod p2876_count_visited_nodes_in_a_directed_graph;
 pub mod p2948_make_lexicographically_smallest_array_by_swapping_elements;
 pub mod p3066_minimum_operations_to_exceed_threshold_value_ii;
