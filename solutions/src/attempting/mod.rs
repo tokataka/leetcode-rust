@@ -1,2 +1,1 @@
-pub mod p0968_binary_tree_cameras;
 pub mod p3241_time_taken_to_mark_all_nodes;

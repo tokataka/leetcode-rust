@@ -41,6 +41,7 @@ pub mod p0805_split_array_with_same_average;
 pub mod p0827_making_a_large_island;
 pub mod p0873_length_of_longest_fibonacci_subsequence;
 pub mod p0889_construct_binary_tree_from_preorder_and_postorder_traversal;
+pub mod p0968_binary_tree_cameras;
 pub mod p0975_odd_even_jump;
 pub mod p1028_recover_a_tree_from_preorder_traversal;
 pub mod p1079_letter_tile_possibilities;

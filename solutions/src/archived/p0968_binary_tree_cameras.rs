@@ -41,81 +41,37 @@ use crate::util::tree::TreeNode;
 // submission codes start here
 
 use std::cell::RefCell;
-use std::collections::VecDeque;
 use std::rc::Rc;
 
 impl Solution {
     pub fn min_camera_cover(root: Option<Rc<RefCell<TreeNode>>>) -> i32 {
-        let mut graph = vec![vec![]];
-        let mut st = vec![(root.unwrap(), 0)];
-        let mut cur_idx = 1;
+        // return: need_cam, has_cam, cam_count
+        fn _min_camera_cover(cur: Option<Rc<RefCell<TreeNode>>>) -> (bool, bool, i32) {
+            let cur = match cur {
+                Some(cur) => cur,
+                _ => return (false, false, 0),
+            };
 
-        while let Some((cur, idx)) = st.pop() {
-            let mut cur = cur.as_ref().borrow_mut();
+            let cur = cur.borrow();
 
-            for child in [cur.left.take(), cur.right.take()].into_iter().flatten() {
-                graph[idx].push(cur_idx);
-                graph.push(vec![idx]);
-                st.push((child, cur_idx));
-                cur_idx += 1;
+            let children_result = [cur.left.as_ref().cloned(), cur.right.as_ref().cloned()]
+                .into_iter()
+                .map(_min_camera_cover)
+                .fold((false, false, 0), |acc, x| {
+                    (acc.0 | x.0, acc.1 | x.1, acc.2 + x.2)
+                });
+
+            match children_result {
+                (true, _, count) => (false, true, count + 1),
+                (false, true, count) => (false, false, count),
+                (false, false, count) => (true, false, count),
             }
         }
 
-        if graph.len() == 1 {
-            return 1;
+        match _min_camera_cover(root) {
+            (true, _, count) => count + 1,
+            (false, _, count) => count,
         }
-
-        let mut q = graph
-            .iter()
-            .enumerate()
-            .filter(|&(_, x)| x.len() == 1)
-            .map(|(i, _)| i)
-            .collect::<VecDeque<_>>();
-
-        let mut camera = vec![false; graph.len()];
-        let mut monitoring = vec![false; graph.len()];
-
-        while let Some(cur) = q.pop_front() {
-            if graph[cur].is_empty() {
-                if !monitoring[cur] {
-                    camera[cur] = true;
-                }
-                continue;
-            }
-
-            let c = graph[cur][0];
-
-            if camera[c] {
-                continue;
-            }
-
-            camera[c] = true;
-            monitoring[c] = true;
-
-            graph.push(vec![]);
-            let edges_c = graph.swap_remove(c);
-
-            for &x in &edges_c {
-                if let Some(idx) = graph[x].iter().position(|&t| t == c) {
-                    graph[x].swap_remove(idx);
-                    monitoring[x] = true;
-                }
-            }
-
-            for &x in &edges_c {
-                if graph[x].len() == 1 {
-                    let y = graph[x][0];
-
-                    if let Some(idx) = graph[y].iter().position(|&t| t == x) {
-                        graph[y].swap_remove(idx);
-                        graph[x].clear();
-                        q.push_back(y);
-                    }
-                }
-            }
-        }
-
-        camera.iter().filter(|&&x| x).count() as i32
     }
 }
 
