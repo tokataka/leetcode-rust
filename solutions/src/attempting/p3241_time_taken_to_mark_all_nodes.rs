@@ -76,10 +76,12 @@ pub struct Solution {}
 
 impl Solution {
     pub fn time_taken(edges: Vec<Vec<i32>>) -> Vec<i32> {
+        type Pos = (i32, i32);
+
         fn dp(
             graph: &HashMap<i32, Vec<i32>>,
-            cache: &mut HashMap<(i32, i32), i32>,
-            cache2: &mut HashMap<i32, ((i32, i32), (i32, i32))>,
+            cache: &mut HashMap<Pos, i32>,
+            cache2: &mut HashMap<i32, (Pos, Pos)>,
             prev: i32,
             cur: i32,
         ) -> i32 {
@@ -143,8 +145,8 @@ impl Solution {
             acc
         });
 
-        let mut cache: HashMap<(i32, i32), i32> = HashMap::new();
-        let mut cache2: HashMap<i32, ((i32, i32), (i32, i32))> = HashMap::new();
+        let mut cache: HashMap<Pos, i32> = HashMap::new();
+        let mut cache2: HashMap<i32, (Pos, Pos)> = HashMap::new();
         let mut result = Vec::with_capacity(n);
 
         for i in 0..n as i32 {

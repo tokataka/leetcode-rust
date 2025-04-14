@@ -1,3 +1,2 @@
 pub mod p0968_binary_tree_cameras;
-pub mod p3435_frequencies_of_shortest_supersequences;
-pub mod p3449_maximize_the_minimum_game_score;
+pub mod p3241_time_taken_to_mark_all_nodes;
