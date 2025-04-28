@@ -74,67 +74,78 @@ pub struct Solution {}
 
 // submission codes start here
 
+enum Time {
+    Complete(i32, i32, i32),
+    Incomplete(i32, i32, i32, i32),
+}
+
+use Time::*;
+
 impl Solution {
     pub fn time_taken(edges: Vec<Vec<i32>>) -> Vec<i32> {
-        type Pos = (i32, i32);
-
-        fn dp(
+        fn get_time(
+            cache: &mut HashMap<i32, Time>,
             graph: &HashMap<i32, Vec<i32>>,
-            cache: &mut HashMap<Pos, i32>,
-            cache2: &mut HashMap<i32, (Pos, Pos)>,
-            prev: i32,
-            cur: i32,
+            from: i32,
+            to: i32,
         ) -> i32 {
-            if let Some(&((a, a_idx), (b, _))) = cache2.get(&prev) {
-                return if cur == a_idx { b } else { a };
-            }
+            if let Some(x) = cache.get(&to) {
+                let (top, second, top_idx) = match *x {
+                    Complete(top, second, top_idx) => (top, second, top_idx),
+                    Incomplete(mut top, mut second, mut top_idx, incomplete_idx) => {
+                        let mut incomplete_time = get_time(cache, graph, to, incomplete_idx);
 
-            if let Some(&x) = cache.get(&(prev, cur)) {
-                return x;
-            }
+                        incomplete_time += if to % 2 == 0 { 2 } else { 1 };
 
-            let mut costs = vec![];
+                        if incomplete_time > top {
+                            second = top;
+                            top = incomplete_time;
+                            top_idx = incomplete_idx;
+                        } else if incomplete_time > second {
+                            second = incomplete_time;
+                        }
 
-            for &next in graph[&cur].iter().filter(|&&x| x != prev) {
-                costs.push((dp(graph, cache, cache2, cur, next), next));
-            }
+                        cache.insert(to, Complete(top, second, top_idx));
 
-            costs.sort_by(|a, b| b.cmp(a));
-
-            while costs.len() < 2 {
-                costs.push((0, i32::MAX));
-            }
-
-            let mut cur_cost = 0;
-            if prev != cur {
-                cur_cost = if cur % 2 == 0 { 2 } else { 1 };
-            }
-
-            if prev == cur {
-                cache2.insert(
-                    prev,
-                    (
-                        (costs[0].0 + cur_cost, costs[0].1),
-                        (costs[1].0 + cur_cost, costs[1].1),
-                    ),
-                );
-
-                return costs[0].0;
-            }
-
-            let result = cur_cost
-                + if cur == costs[0].1 {
-                    costs[1].0
-                } else {
-                    costs[0].0
+                        (top, second, top_idx)
+                    }
                 };
 
-            cache.insert((prev, cur), result);
+                return if top_idx == from { second } else { top };
+            }
 
-            result
+            let mut times = graph
+                .get(&to)
+                .unwrap()
+                .iter()
+                .filter(|&&next_to| next_to != from)
+                .map(|&next_to| (get_time(cache, graph, to, next_to), next_to))
+                .collect::<Vec<_>>();
+
+            times.sort_unstable_by(|a, b| b.cmp(a));
+
+            let (mut top, mut second, top_idx) = match times.len() {
+                0 => (0, 0, -1),
+                1 => (times[0].0, 0, times[0].1),
+                _ => (times[0].0, times[1].0, times[0].1),
+            };
+
+            let time_add = if to % 2 == 0 { 2 } else { 1 };
+
+            top += time_add;
+            second += time_add;
+
+            match from {
+                -1 => cache.insert(to, Complete(top, second, top_idx)),
+                from => cache.insert(to, Incomplete(top, second, top_idx, from)),
+            };
+
+            if top_idx == from {
+                second
+            } else {
+                top
+            }
         }
-
-        let n = edges.len() + 1;
 
         let graph: HashMap<i32, Vec<i32>> = edges.iter().fold(HashMap::new(), |mut acc, x| {
             let (a, b) = (x[0], x[1]);
@@ -145,15 +156,11 @@ impl Solution {
             acc
         });
 
-        let mut cache: HashMap<Pos, i32> = HashMap::new();
-        let mut cache2: HashMap<i32, (Pos, Pos)> = HashMap::new();
-        let mut result = Vec::with_capacity(n);
+        let mut cache: HashMap<i32, Time> = HashMap::new();
 
-        for i in 0..n as i32 {
-            result.push(dp(&graph, &mut cache, &mut cache2, i, i));
-        }
-
-        result
+        (0..=edges.len() as i32)
+            .map(|from| get_time(&mut cache, &graph, -1, from) - if from % 2 == 0 { 2 } else { 1 })
+            .collect()
     }
 }
 
