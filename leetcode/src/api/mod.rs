@@ -52,3 +52,22 @@ pub fn get_daily_problem_id() -> Option<u32> {
         .parse()
         .ok()
 }
+
+pub fn get_random_problem_title_slug(difficulties: &[&str]) -> Option<u32> {
+    let client = reqwest::Client::new();
+    let res: RawRandom = client
+        .post(GRAPHQL_URL)
+        .json(&Query::random_query(difficulties))
+        .send()
+        .unwrap()
+        .json()
+        .ok()?;
+
+    Some(
+        res.data
+            .random_question_v2
+            .question_frontend_id
+            .parse()
+            .unwrap(),
+    )
+}

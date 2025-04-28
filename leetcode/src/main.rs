@@ -6,9 +6,8 @@ use std::{
     vec,
 };
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use leetcode::api::{self, MetaData, Problem, StatWithStatus};
-use rand::prelude::*;
 use regex::Regex;
 use scraper::{Html, Selector};
 
@@ -36,7 +35,27 @@ enum CliCommands {
     /// Fetch daily question
     Daily,
     /// Fetch a random problem via API
-    Random,
+    Random {
+        #[arg(short, long)]
+        difficulty: Vec<ProblemDifficulty>,
+    },
+}
+
+#[derive(ValueEnum, Debug, Clone)]
+enum ProblemDifficulty {
+    Easy,
+    Medium,
+    Hard,
+}
+
+impl ProblemDifficulty {
+    fn to_str(&self) -> &str {
+        match &self {
+            ProblemDifficulty::Easy => "EASY",
+            ProblemDifficulty::Medium => "MEDIUM",
+            ProblemDifficulty::Hard => "HARD",
+        }
+    }
 }
 
 fn main() {
@@ -60,18 +79,19 @@ fn main() {
         CliCommands::Fetch { problem_ids } | CliCommands::Archive { problem_ids } => {
             problem_ids.clone()
         }
-        CliCommands::Random => {
-            let mut rng = rand::rng();
+        CliCommands::Random { difficulty } => {
+            let difficulties = difficulty.iter().map(|d| d.to_str()).collect::<Vec<_>>();
 
-            vec![problems
-                .iter()
-                .map(|problem| problem.stat.frontend_question_id)
-                .filter(|problem| {
-                    !existing_attempting_problems.contains(problem)
-                        && !existing_archived_problems.contains(problem)
-                })
-                .choose(&mut rng)
-                .unwrap()]
+            loop {
+                let problem_id = api::get_random_problem_title_slug(&difficulties)
+                    .expect("Random question failed");
+
+                if !existing_attempting_problems.contains(&problem_id)
+                    && !existing_archived_problems.contains(&problem_id)
+                {
+                    break vec![problem_id];
+                }
+            }
         }
         CliCommands::Daily => {
             let problem_id = api::get_daily_problem_id().expect("Daily question unavailable");

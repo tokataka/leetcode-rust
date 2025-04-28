@@ -24,6 +24,20 @@ query questionOfToday {
 }"#;
 const DAILY_QUERY_OPERATION: &str = "questionOfToday";
 
+const RANDOM_QUERY_STRING: &str = r#"
+query randomQuestionV2($favoriteSlug: String, $categorySlug: String, $searchKeyword: String, $filtersV2: QuestionFilterInput) {
+    randomQuestionV2(
+        favoriteSlug: $favoriteSlug
+        categorySlug: $categorySlug
+        filtersV2: $filtersV2
+        searchKeyword: $searchKeyword
+    ) {
+        questionFrontendId
+    }
+}"#;
+
+const RANDOM_QUERY_OPERATION: &str = "randomQuestionV2";
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Problem {
     pub title: String,
@@ -186,6 +200,23 @@ pub struct DailyQuestion {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct RawRandom {
+    pub data: RandomData,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RandomData {
+    #[serde(rename = "randomQuestionV2")]
+    pub random_question_v2: RandomQuestionV2,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RandomQuestionV2 {
+    #[serde(rename = "questionFrontendId")]
+    pub question_frontend_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Query {
     #[serde(rename = "operationName")]
     operation_name: String,
@@ -207,6 +238,56 @@ impl Query {
             operation_name: DAILY_QUERY_OPERATION.to_owned(),
             variables: json!({}),
             query: DAILY_QUERY_STRING.to_owned(),
+        }
+    }
+
+    pub fn random_query(difficulties: &[&str]) -> Query {
+        Query {
+            operation_name: RANDOM_QUERY_OPERATION.to_owned(),
+            variables: json!({
+                "categorySlug": "all-code-essentials",
+                "filtersV2": {
+                    "filterCombineType": "ALL",
+                    "statusFilter": {
+                        "questionStatuses": [],
+                        "operator": "IS"
+                    },
+                    "difficultyFilter": {
+                        "difficulties": difficulties,
+                        "operator": "IS"
+                    },
+                    "languageFilter": {
+                        "languageSlugs": [
+                            "rust"
+                        ],
+                        "operator": "IS"
+                    },
+                    "topicFilter": {
+                        "topicSlugs": [],
+                        "operator": "IS"
+                    },
+                    "acceptanceFilter": {},
+                    "frequencyFilter": {},
+                    "lastSubmittedFilter": {},
+                    "publishedFilter": {},
+                    "companyFilter": {
+                        "companySlugs": [],
+                        "operator": "IS"
+                    },
+                    "positionFilter": {
+                        "positionSlugs": [],
+                        "operator": "IS"
+                    },
+                    "premiumFilter": {
+                        "premiumStatus": [
+                            "NOT_PREMIUM"
+                        ],
+                        "operator": "IS"
+                    }
+                },
+                "searchKeyword": ""
+            }),
+            query: RANDOM_QUERY_STRING.to_owned(),
         }
     }
 }

@@ -33,6 +33,15 @@
         "args": ["build", "-p", "leetcode"]
       },
       "args": ["daily"]
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Cargo debug random",
+      "cargo": {
+        "args": ["build", "-p", "leetcode"]
+      },
+      "args": ["random", "-d", "hard", "-d", "medium"]
     }
   ],
   "inputs": [
