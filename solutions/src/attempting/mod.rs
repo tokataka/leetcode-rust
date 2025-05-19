@@ -1,7 +1,1 @@
 pub mod p0000_playground;
-pub mod p1550_three_consecutive_odds;
-pub mod p1627_graph_connectivity_with_threshold;
-pub mod p1751_maximum_number_of_events_that_can_be_attended_ii;
-pub mod p2094_finding_3_digit_even_numbers;
-pub mod p2681_power_of_heroes;
-pub mod p2918_minimum_equal_sum_of_two_arrays_after_replacing_zeros;
