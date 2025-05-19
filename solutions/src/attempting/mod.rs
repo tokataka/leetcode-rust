@@ -1,1 +1,4 @@
 pub mod p0000_playground;
+pub mod p1627_graph_connectivity_with_threshold;
+pub mod p1751_maximum_number_of_events_that_can_be_attended_ii;
+pub mod p2681_power_of_heroes;
