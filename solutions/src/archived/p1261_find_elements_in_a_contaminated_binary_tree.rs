@@ -88,7 +88,6 @@ struct FindElements {
     exists: HashSet<i32>,
 }
 
-#[allow(dead_code)]
 impl FindElements {
     fn new(root: Option<Rc<RefCell<TreeNode>>>) -> Self {
         let mut exists = HashSet::new();

@@ -109,7 +109,6 @@ impl Solution {
 
         let mut cache = vec![vec![vec![i64::MAX; target_count + 1]; target_sum + 1]; 10];
 
-        #[allow(clippy::too_many_arguments)]
         fn inv_sum(
             digit: usize,
             odd_sum: usize,

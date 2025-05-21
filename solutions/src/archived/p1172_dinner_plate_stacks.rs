@@ -78,7 +78,6 @@ struct DinnerPlates {
     cur_len: usize,
 }
 
-#[allow(dead_code)]
 impl DinnerPlates {
     fn new(capacity: i32) -> Self {
         Self {

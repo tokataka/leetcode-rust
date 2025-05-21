@@ -65,7 +65,6 @@ struct RandomizedCollection {
  * `&self` means the method takes an immutable reference.
  * If you need a mutable reference, change it to `&mut self` instead.
  */
-#[allow(dead_code)]
 impl RandomizedCollection {
     fn new() -> Self {
         Self {

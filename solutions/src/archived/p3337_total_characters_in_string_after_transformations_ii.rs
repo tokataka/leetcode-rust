@@ -113,7 +113,6 @@ impl std::ops::Mul<&Matrix> for &Matrix {
 
         let mut res = vec![vec![0; rhs.0[0].len()]; self.0.len()];
 
-        #[allow(clippy::needless_range_loop)]
         for i in 0..self.0.len() {
             for j in 0..rhs.0[0].len() {
                 for k in 0..self.0[0].len() {

@@ -82,7 +82,6 @@ impl Solution {
         for dj in 1..n {
             let mut diagonal = vec![];
 
-            #[allow(clippy::needless_range_loop)]
             for d in 0..n - dj {
                 diagonal.push(grid[d][dj + d]);
             }

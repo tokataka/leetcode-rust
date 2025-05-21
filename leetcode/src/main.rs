@@ -343,9 +343,6 @@ fn insert_return_in_code_systemdesign(meta_data: &MetaData, code: &str) -> Strin
         }
 
         if !in_comment {
-            if line.trim().starts_with("impl") {
-                result.push("#[allow(dead_code)]");
-            }
             result.push(line);
         }
 

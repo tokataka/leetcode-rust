@@ -56,7 +56,6 @@ struct ProductOfNumbers {
     prefix_product: Vec<i32>,
 }
 
-#[allow(dead_code)]
 impl ProductOfNumbers {
     fn new() -> Self {
         Self {

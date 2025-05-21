@@ -57,7 +57,6 @@ struct NumberContainers {
     invalidated: HashSet<(i32, i32)>,
 }
 
-#[allow(dead_code)]
 impl NumberContainers {
     fn new() -> Self {
         Self {
