@@ -22,16 +22,13 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum CliCommands {
-    /// Fetch problems
+    /// Fetch problems with problem id
     Fetch {
         #[clap(required = true)]
         problem_ids: Vec<u32>,
     },
-    /// Archive solutions to archived
-    Archive {
-        #[clap(required = true)]
-        problem_ids: Vec<u32>,
-    },
+    /// Archive solutions to archived (empty to archive all)
+    Archive { problem_ids: Vec<u32> },
     /// Fetch daily question
     Daily,
     /// Fetch a random problem via API
@@ -59,7 +56,7 @@ impl ProblemDifficulty {
 }
 
 fn main() {
-    let cli = Cli::parse();
+    let mut cli = Cli::parse();
 
     let problems = api::list_problems().unwrap().stat_status_pairs;
 
@@ -67,6 +64,7 @@ fn main() {
         io::BufReader::new(fs::File::open(format!("{ATTEMPTING_ROOT}/mod.rs")).unwrap())
             .lines()
             .filter_map(|x| x.unwrap()[9..13].parse::<u32>().ok())
+            .filter(|&x| x > 0)
             .collect::<HashSet<_>>();
 
     let existing_archived_problems =
@@ -75,9 +73,14 @@ fn main() {
             .filter_map(|x| x.unwrap()[9..13].parse::<u32>().ok())
             .collect::<HashSet<_>>();
 
-    let problem_ids = match &cli.command {
-        CliCommands::Fetch { problem_ids } | CliCommands::Archive { problem_ids } => {
-            problem_ids.clone()
+    let problem_ids = match &mut cli.command {
+        CliCommands::Fetch { problem_ids } => std::mem::take(problem_ids),
+        CliCommands::Archive { problem_ids } => {
+            if problem_ids.is_empty() {
+                existing_attempting_problems.iter().cloned().collect()
+            } else {
+                std::mem::take(problem_ids)
+            }
         }
         CliCommands::Random { difficulty } => {
             let difficulties = difficulty.iter().map(|d| d.to_str()).collect::<Vec<_>>();
@@ -110,6 +113,10 @@ fn main() {
 
             match &cli.command {
                 CliCommands::Archive { problem_ids: _ } => {
+                    // if problem_ids.is_empty() {
+                    //     problem_ids.extend(&existing_attempting_problems);
+                    // }
+
                     if !existing_attempting_problems.contains(&problem_id) {
                         println!("{} not found", &problem_string);
                         return;
