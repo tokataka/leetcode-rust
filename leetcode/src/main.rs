@@ -28,7 +28,11 @@ enum CliCommands {
         problem_ids: Vec<u32>,
     },
     /// Archive solutions to archived (empty to archive all)
-    Archive { problem_ids: Vec<u32> },
+    Archive {
+        problem_ids: Vec<u32>,
+        #[arg(long)]
+        exclude: Vec<u32>,
+    },
     /// Fetch daily question
     Daily,
     /// Fetch a random problem via API
@@ -75,13 +79,17 @@ fn main() {
 
     let problem_ids = match &mut cli.command {
         CliCommands::Fetch { problem_ids } => std::mem::take(problem_ids),
-        CliCommands::Archive { problem_ids } => {
-            if problem_ids.is_empty() {
-                existing_attempting_problems.iter().cloned().collect()
-            } else {
-                std::mem::take(problem_ids)
-            }
+        CliCommands::Archive {
+            problem_ids,
+            exclude,
+        } => if problem_ids.is_empty() {
+            existing_attempting_problems.iter().cloned().collect()
+        } else {
+            std::mem::take(problem_ids)
         }
+        .into_iter()
+        .filter(|x| !exclude.contains(x))
+        .collect(),
         CliCommands::Random { difficulty } => {
             let difficulties = difficulty.iter().map(|d| d.to_str()).collect::<Vec<_>>();
 
@@ -112,7 +120,10 @@ fn main() {
             let problem_string = format!("Problem #{}: {}", problem_id, &problem_title);
 
             match &cli.command {
-                CliCommands::Archive { problem_ids: _ } => {
+                CliCommands::Archive {
+                    problem_ids: _,
+                    exclude: _,
+                } => {
                     // if problem_ids.is_empty() {
                     //     problem_ids.extend(&existing_attempting_problems);
                     // }
