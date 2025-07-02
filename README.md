@@ -25,6 +25,6 @@ This tool fetches Leetcode problems along with their provided test cases, allowi
 
 ## Minimum Supported Rust Version (MSRV)
 
-This crate is guaranteed to compile on stable Rust 1.78.0 and up.
+This crate is guaranteed to compile on stable Rust 1.80.0 and up.
 
 [^1]: https://support.leetcode.com/hc/en-us/articles/360011833974-What-are-the-environments-for-the-programming-languages
