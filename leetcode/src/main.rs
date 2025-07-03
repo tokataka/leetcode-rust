@@ -668,6 +668,7 @@ fn format_value_type(value: &str, value_type: &str) -> String {
             "ListNode" => format!("linked!{value}"),
             "TreeNode" => format!("tree!{value}"),
             "string" => format!("{value}.to_owned()"),
+            "character" => value.replace("\"", "'"),
             _ => value.to_owned(),
         };
     }
