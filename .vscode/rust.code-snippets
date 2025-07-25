@@ -56,8 +56,8 @@
       "\t\t\tfalse => (a, b),",
       "\t\t};",
       "",
-      "\t\tself.size[b] += self.size[a];",
-      "\t\tself.data[a] = b;",
+      "\t\tself.size[a] += self.size[b];",
+      "\t\tself.data[b] = a;",
       "\t}",
       "}"
     ],

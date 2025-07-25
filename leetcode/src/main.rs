@@ -296,6 +296,13 @@ fn fetch_problem(problem_stat: &StatWithStatus) {
     mod_modified.dedup();
 
     let _ = fs::write(mod_path, mod_modified.join("\n"));
+
+    if std::env::var("TERM_PROGRAM").is_ok_and(|v| v == "vscode") {
+        std::process::Command::new("code")
+            .arg(&problem_path)
+            .status()
+            .expect("'code' is not found");
+    }
 }
 
 fn parse_extra_use(code: &str) -> String {
