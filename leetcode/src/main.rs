@@ -548,7 +548,7 @@ fn create_test_code_systemdesign(problem_dom: &Html, meta_data: &MetaData) -> St
                 }
             }
 
-            examples.push((input_str.join(" "), expected.join(" ")));
+            examples.push((input_str.join("\n"), expected.join(" ")));
         }
     }
 
