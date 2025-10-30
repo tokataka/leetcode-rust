@@ -1,5 +1,5 @@
 ///
-/// # 3347. Maximum Frequency of an Element After Performing Operations II
+/// # 3346. Maximum Frequency of an Element After Performing Operations I
 ///
 /// You are given an integer array `nums` and two integers `k` and `numOperations`.
 ///
@@ -20,8 +20,8 @@
 ///
 /// We can achieve a maximum frequency of two by:
 ///
-/// * Adding 0 to `nums[1]`, after which `nums` becomes `[1, 4, 5]`.
-/// * Adding -1 to `nums[2]`, after which `nums` becomes `[1, 4, 4]`.
+/// * Adding 0 to `nums[1]`. `nums` becomes `[1, 4, 5]`.
+/// * Adding -1 to `nums[2]`. `nums` becomes `[1, 4, 4]`.
 ///
 /// **Example 2:**
 ///
@@ -38,45 +38,48 @@
 /// **Constraints:**
 ///
 /// * `1 <= nums.length <= 10<sup>5</sup>`
-/// * `1 <= nums[i] <= 10<sup>9</sup>`
-/// * `0 <= k <= 10<sup>9</sup>`
+/// * `1 <= nums[i] <= 10<sup>5</sup>`
+/// * `0 <= k <= 10<sup>5</sup>`
 /// * `0 <= numOperations <= nums.length`
 ///
 pub struct Solution {}
 
-// problem: https://leetcode.com/problems/maximum-frequency-of-an-element-after-performing-operations-ii/
-// discuss: https://leetcode.com/problems/maximum-frequency-of-an-element-after-performing-operations-ii/discuss/?currentPage=1&orderBy=most_votes&query=
+// problem: https://leetcode.com/problems/maximum-frequency-of-an-element-after-performing-operations-i/
+// discuss: https://leetcode.com/problems/maximum-frequency-of-an-element-after-performing-operations-i/discuss/?currentPage=1&orderBy=most_votes&query=
 
 // submission codes start here
-use std::collections::HashMap;
+
+#[allow(unused_imports)]
+use itertools::Itertools;
 
 impl Solution {
     pub fn max_frequency(nums: Vec<i32>, k: i32, num_operations: i32) -> i32 {
-        let mut freq = HashMap::new();
+        let k = k as usize;
+
+        let mut freq = vec![0; 100001];
+        let mut min_num = usize::MAX;
+        let mut max_num = 0;
 
         for num in nums {
-            freq.entry(num).and_modify(|x| *x += 1).or_insert(1);
+            freq[num as usize] += 1;
+            min_num = min_num.min(num as usize);
+            max_num = max_num.max(num as usize);
         }
 
-        let mut q = vec![];
+        let mut result = 1;
 
-        for (&num, &count) in &freq {
-            q.push((num, 0));
-            q.push((num - k, count));
-            q.push((num + k, -count));
-        }
+        let mut range_count = freq.iter().take(min_num + k).sum::<i32>();
 
-        q.sort_unstable_by_key(|x| (x.0, -x.1));
+        for (num, &count) in freq.iter().enumerate().take(max_num + 1).skip(min_num) {
+            if num + k <= 100000 {
+                range_count += freq[num + k];
+            }
 
-        let mut result = 0;
-        let mut diff = 0;
+            result = result.max(count + num_operations.min(range_count - count));
 
-        for (num, cur_diff) in q {
-            diff += cur_diff;
-
-            let count = *freq.get(&num).unwrap_or(&0);
-
-            result = result.max(count + num_operations.min(diff - count));
+            if num >= k {
+                range_count -= freq[num - k];
+            }
         }
 
         result
@@ -90,7 +93,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_3347() {
+    fn test_3346() {
         // let nums = vec![1, 4, 5];
         // let k = 1;
         // let num_operations = 2;
@@ -101,10 +104,10 @@ mod tests {
         // let num_operations = 1;
         // let expected = 2;
         // assert_eq!(Solution::max_frequency(nums, k, num_operations), expected);
-        let nums = vec![9];
-        let k = 0;
-        let num_operations = 0;
-        let expected = 1;
+        let nums = vec![88, 53];
+        let k = 27;
+        let num_operations = 2;
+        let expected = 2;
         assert_eq!(Solution::max_frequency(nums, k, num_operations), expected);
     }
 }

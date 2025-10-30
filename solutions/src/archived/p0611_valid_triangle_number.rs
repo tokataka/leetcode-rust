@@ -36,25 +36,29 @@ pub struct Solution {}
 // submission codes start here
 
 impl Solution {
-    pub fn triangle_number(nums: Vec<i32>) -> i32 {
-        let mut nums = nums.into_iter().filter(|&x| x > 0).collect::<Vec<_>>();
-        nums.sort();
-
-        if nums.len() < 3 {
-            return 0;
-        }
+    pub fn triangle_number(mut nums: Vec<i32>) -> i32 {
+        nums.sort_unstable();
 
         let mut result = 0;
 
-        for (i, x) in nums.iter().enumerate() {
-            for (j, y) in nums.iter().enumerate().skip(i + 1) {
-                let idx = nums.partition_point(|&z| z < x + y);
+        let mut prev_nums = vec![0; 1001];
+        let mut prev_sums = vec![0; 2001];
 
-                result += idx - j - 1;
+        for num in nums.into_iter().skip_while(|&x| x == 0) {
+            let num = num as usize;
+
+            for sum in num + 1..=2 * num {
+                result += prev_sums[sum];
             }
+
+            for prev in 1..=num {
+                prev_sums[num + prev] += prev_nums[prev]
+            }
+
+            prev_nums[num] += 1;
         }
 
-        result as i32
+        result
     }
 }
 

@@ -1,1 +1,4 @@
 pub mod p0000_playground;
+pub mod p0042_trapping_rain_water;
+pub mod p1526_minimum_number_of_increments_on_subarrays_to_form_a_target_array;
+pub mod p2865_beautiful_towers_i;

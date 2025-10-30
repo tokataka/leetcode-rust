@@ -59,7 +59,7 @@ impl Solution {
             x /= 10;
         }
 
-        for i in 0..(digits.len() + 1) / 2 {
+        for i in 0..digits.len().div_ceil(2) {
             if digits[i] != digits[digits.len() - 1 - i] {
                 return false;
             }

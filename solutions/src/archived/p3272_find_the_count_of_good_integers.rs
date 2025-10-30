@@ -66,7 +66,7 @@ impl Solution {
         for i in base..base * 10 {
             let s = i.to_string();
             let rev: String = s.chars().rev().skip(skip).collect();
-            let combined = format!("{}{}", s, rev);
+            let combined = format!("{s}{rev}");
             let palindromic_integer: i64 = combined.parse().unwrap();
             /* If the current palindrome number is a k-palindromic integer */
             if palindromic_integer % (k as i64) == 0 {

@@ -85,7 +85,7 @@ impl SegTree {
     }
 
     fn query_update(&mut self, node: usize, left: usize, right: usize, fruit: i32) -> bool {
-        if !self.data[node].is_some_and(|x| x >= fruit) {
+        if self.data[node].is_none_or(|x| x < fruit) {
             return false;
         }
 

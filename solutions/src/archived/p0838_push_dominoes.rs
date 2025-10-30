@@ -59,7 +59,7 @@ impl Solution {
             match dominoes[cur] {
                 b'L' => {
                     if lr_char == b'R' {
-                        let mid = (cur + lr_idx + 1) / 2;
+                        let mid = (cur + lr_idx).div_ceil(2);
                         dominoes[lr_idx + 1..mid].fill(b'R');
                         dominoes[mid..cur].fill(b'L');
                         if (cur - (lr_idx + 1)) % 2 == 1 {
