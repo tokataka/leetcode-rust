@@ -483,18 +483,14 @@ fn create_test_code(problem_dom: &Html, meta_data: &MetaData) -> String {
         let mut function_inputs = vec![];
 
         for (input, param) in inputs.iter().zip(meta_data.params.as_ref().unwrap()) {
-            let lvalue = to_snake_case(&param.name);
-            let rvalue = format_value_type(&input.1, &param.type_);
-            test_code.push(format!("        let {lvalue} = {rvalue};"));
-            function_inputs.push(lvalue);
+            function_inputs.push(format_value_type(&input.1, &param.type_));
         }
 
-        let rvalue = format_value_type(&expected, &meta_data.return_.as_ref().unwrap().type_);
-        test_code.push(format!("        let expected = {rvalue};"));
-
+        let expected = format_value_type(&expected, &meta_data.return_.as_ref().unwrap().type_);
         let function_name = to_snake_case(meta_data.name.as_ref().unwrap());
+
         test_code.push(format!(
-            "        assert_eq!(Solution::{function_name}({}), expected);",
+            "        assert_eq!(Solution::{function_name}({}), {expected});",
             function_inputs.join(", ")
         ));
     }

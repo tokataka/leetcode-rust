@@ -4,9 +4,7 @@ pub struct Solution {}
 use itertools::Itertools;
 
 impl Solution {
-    pub fn playground() {
-
-    }
+    pub fn playground() {}
 }
 
 #[cfg(test)]
